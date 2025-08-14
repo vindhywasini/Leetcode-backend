@@ -40,40 +40,48 @@ const register = async (req,res)=>{
 
 
 const login = async (req,res)=>{
-
     try{
-        const {emailId, password} = req.body;
+        const { emailId, password } = req.body;
 
-        if(!emailId)
-            throw new Error("Invalid Credentials");
-        if(!password)
-            throw new Error("Invalid Credentials");
+        if(!emailId || !password)
+            return res.status(400).json({ message: "Invalid Credentials" });
 
-        const user = await User.findOne({emailId});
+        const user = await User.findOne({ emailId });
+        if(!user)
+            return res.status(401).json({ message: "Invalid Credentials" });
 
-        const match = await bcrypt.compare(password,user.password);
-
+        const match = await bcrypt.compare(password, user.password);
         if(!match)
-            throw new Error("Invalid Credentials");
+            return res.status(401).json({ message: "Invalid Credentials" });
 
         const reply = {
             firstName: user.firstName,
             emailId: user.emailId,
             _id: user._id,
-            role:user.role,
-        }
+            role: user.role
+        };
 
-        const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
-        res.cookie('token',token,{maxAge: 60*60*1000});
-        res.status(201).json({
-            user:reply,
-            message:"Loggin Successfully"
-        })
+        const token = jwt.sign(
+            { _id: user._id, emailId: user.emailId, role: user.role },
+            process.env.JWT_KEY,
+            { expiresIn: 60*60 }
+        );
+
+        res.cookie('token', token, {
+            maxAge: 60*60*1000,
+            httpOnly: true,
+            sameSite: 'none' 
+        });
+
+        res.status(200).json({
+            user: reply,
+            message: "Logged in Successfully"
+        });
     }
     catch(err){
-        res.status(401).send("Error: "+err);
+        res.status(500).json({ message: err.message });
     }
-}
+};
 
 
 // logOut feature
