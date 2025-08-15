@@ -15,6 +15,7 @@ const cors = require('cors')
 
 app.use(cors({
     origin: 'https://leetcode-frontend-ikts.onrender.com',
+    //  origin:'http://localhost:5173'
     credentials: true 
 }))
 
